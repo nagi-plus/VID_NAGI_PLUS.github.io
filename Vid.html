@@ -32,7 +32,7 @@
 
         #controls, #title, #centerControls, #skipIntro {
             position: absolute;
-            opacity: 0;
+            opacity: 0; /* Controles inicialmente ocultos */
             transition: opacity 0.3s;
             color: white;
             z-index: 10;
@@ -327,45 +327,59 @@
     });
 
     playPauseButton.addEventListener('click', () => {
-        if (video.paused) {
-            video.play();
-            playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
-        } else {
-            video.pause();
-            playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+        if (controlsVisible) {
+            if (video.paused) {
+                video.play();
+                playPauseButton.innerHTML = '<i class="fas fa-pause"></i>';
+            } else {
+                video.pause();
+                playPauseButton.innerHTML = '<i class="fas fa-play"></i>';
+            }
         }
     });
 
     muteButton.addEventListener('click', () => {
-        video.muted = !video.muted;
-        muteButton.innerHTML = video.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        if (controlsVisible) {
+            video.muted = !video.muted;
+            muteButton.innerHTML = video.muted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        }
     });
 
     fullscreenButton.addEventListener('click', () => {
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-            fullscreenButton.innerHTML = '<i class="fas fa-expand"></i>';
-        } else {
-            videoContainer.requestFullscreen();
-            fullscreenButton.innerHTML = '<i class="fas fa-compress"></i>';
+        if (controlsVisible) {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+                fullscreenButton.innerHTML = '<i class="fas fa-expand"></i>';
+            } else {
+                videoContainer.requestFullscreen();
+                fullscreenButton.innerHTML = '<i class="fas fa-compress"></i>';
+            }
         }
     });
 
     rewindButton.addEventListener('click', () => {
-        video.currentTime = Math.max(0, video.currentTime - 10);
+        if (controlsVisible) {
+            video.currentTime = Math.max(0, video.currentTime - 10);
+        }
     });
 
     forwardButton.addEventListener('click', () => {
-        video.currentTime = Math.min(video.duration, video.currentTime + 10);
+        if (controlsVisible) {
+            video.currentTime = Math.min(video.duration, video.currentTime + 10);
+        }
     });
 
     skipIntroButton.addEventListener('click', () => {
-        video.currentTime = skipTime; // Salta a la duración de la intro
-        skipIntroButton.style.display = 'none'; // Oculta el botón
+        if (controlsVisible) {
+            video.currentTime = skipTime; // Salta a la duración de la intro
+            skipIntroButton.style.display = 'none'; // Oculta el botón
+        }
     });
 
+    // Listener para el click en el videoContainer
     videoContainer.addEventListener('click', (event) => {
-        if (![playPauseButton, muteButton, fullscreenButton, rewindButton, forwardButton, skipIntroButton].includes(event.target)) {
+        // Si el click no es dentro de un botón o la barra de progreso
+        if (!event.target.closest('button') && !event.target.closest('.progress-container')) { 
             if (controlsVisible) {
                 hideControls(true);
             } else {
@@ -374,33 +388,47 @@
         }
     });
 
+    // Agregar listener a cada botón para detener la propagación del evento click
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation(); // Detiene la propagación del evento click
+        });
+    });
+
     progressBar.addEventListener('input', () => {
-        const progressPercentage = (progressBar.value / progressBar.max) * 100;
-        loadingBar.style.width = progressPercentage + '%';
-        video.currentTime = progressBar.value;
-        updateThumbPosition();
+        if (controlsVisible) {
+            const progressPercentage = (progressBar.value / progressBar.max) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            video.currentTime = progressBar.value;
+            updateThumbPosition();
+        }
     });
 
     progressContainer.addEventListener('click', (event) => {
-        const containerRect = progressContainer.getBoundingClientRect();
-        const clickPosition = event.clientX - containerRect.left;
-        const newTime = (clickPosition / containerRect.width) * video.duration;
-        video.currentTime = newTime;
-        progressBar.value = newTime;
-        const progressPercentage = (newTime / video.duration) * 100;
-        loadingBar.style.width = progressPercentage + '%';
-        updateThumbPosition();
+        if (controlsVisible) {
+            const containerRect = progressContainer.getBoundingClientRect();
+            const clickPosition = event.clientX - containerRect.left;
+            const newTime = (clickPosition / containerRect.width) * video.duration;
+            video.currentTime = newTime;
+            progressBar.value = newTime;
+            const progressPercentage = (newTime / video.duration) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            updateThumbPosition();
+        }
     });
 
     topThumb.addEventListener('click', (event) => {
-        const containerRect = progressContainer.getBoundingClientRect();
-        const clickPosition = event.clientX - containerRect.left;
-        const newTime = (clickPosition / containerRect.width) * video.duration;
-        video.currentTime = newTime;
-        progressBar.value = newTime;
-        const progressPercentage = (newTime / video.duration) * 100;
-        loadingBar.style.width = progressPercentage + '%';
-        updateThumbPosition();
+        if (controlsVisible) {
+            const containerRect = progressContainer.getBoundingClientRect();
+            const clickPosition = event.clientX - containerRect.left;
+            const newTime = (clickPosition / containerRect.width) * video.duration;
+            video.currentTime = newTime;
+            progressBar.value = newTime;
+            const progressPercentage = (newTime / video.duration) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            updateThumbPosition();
+        }
     });
 
     function updateThumbPosition() {
@@ -409,19 +437,25 @@
     }
 
     function showControls() {
-        controls.forEach(control => control.style.opacity = '1');
+        controls.forEach(control => {
+            control.style.opacity = '1';
+        });
         controlsVisible = true;
         clearTimeout(hideControlsTimeout);
     }
 
     function hideControls(immediate = false) {
         if (immediate) {
-            controls.forEach(control => control.style.opacity = '0');
+            controls.forEach(control => {
+                control.style.opacity = '0';
+            });
             controlsVisible = false;
         } else {
             hideControlsTimeout = setTimeout(() => {
                 if (!video.paused) {
-                    controls.forEach(control => control.style.opacity = '0');
+                    controls.forEach(control => {
+                        control.style.opacity = '0';
+                    });
                     controlsVisible = false;
                 }
             }, 3000);
@@ -435,9 +469,23 @@
         return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
+    // Guardar el tiempo de reproducción cuando se pausa el video
+    video.addEventListener('pause', () => {
+        localStorage.setItem(video.src + 'currentTime', video.currentTime);
+    });
+
+    // Recuperar el tiempo de reproducción cuando se carga el video
+    video.addEventListener('loadeddata', () => {
+        // Verificar si la clave ya existe en localStorage
+        if (localStorage.getItem(video.src + 'currentTime')) {
+            video.currentTime = parseFloat(localStorage.getItem(video.src + 'currentTime'));
+        }
+    });
+
     video.addEventListener('play', hideControls);
     video.addEventListener('pause', showControls);
     showControls();
 </script>
 </body>
 </html>
+
