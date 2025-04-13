@@ -52,7 +52,7 @@
             background: transparent;
             border: none;
             color: white;
-            font-size: 30px;
+            font-size: 30px; //tamaño de botondes
             cursor: pointer;
             outline: none;
             padding: 10px;
@@ -113,6 +113,14 @@
             border-radius: 50%;
         }
 
+        #progressBar::-moz-range-thumb {
+            width: 10px;
+            height: 20px;
+            background: #F08080;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
         #skipIntro {
             top: 20px;
             right: 20px;
@@ -163,49 +171,36 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Estilos para la alerta */
-        #alertModal {
-            position: fixed;
+        #progressBar::-webkit-slider-runnable-track {
+            background: #6c757d;
+        }
+
+        #progressBar::-moz-range-track {
+            background: #6c757d;
+        }
+
+        .progress-container #loadingBar {
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        #alertBox {
-            background: #ff4d4d;
-            padding: 20px;
+            background: linear-gradient(to right, red, #ff69b4, #ff4500);
             border-radius: 10px;
-            color: white;
-            text-align: center;
-            font-size: 20px;
-            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
-            width: 80%;
-            max-width: 400px;
+            width: 0%;
+            transition: width 0.2s;
+            z-index: 1;
         }
 
-        #alertButtons {
-            margin-top: 20px;
-        }
-
-        .alertButton {
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: #fff;
-            color: #ff4d4d;
-            border: none;
-            border-radius: 5px;
+        .progress-container #topThumb {
+            position: absolute;
+            top: -3px;
+            left: 10;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: white;
             cursor: pointer;
-            font-size: 16px;
-        }
-
-        .alertButton:hover {
-            background: #ffcccc;
+            z-index: 2;
         }
     </style>
 </head>
@@ -235,28 +230,16 @@
             <div id="spinnerText">Cargando reproductor Nagi Plus</div>
         </div>
     </div>
-
-    <!-- Alerta Modal -->
-    <div id="alertModal">
-        <div id="alertBox">
-            <div>¿Continuar desde donde lo dejaste o empezar de nuevo?</div>
-            <div id="alertButtons">
-                <button class="alertButton" id="continueButton">Continuar</button>
-                <button class="alertButton" id="restartButton">Reiniciar</button>
-            </div>
-        </div>
-    </div>
-
 <script defer>
     // Función para obtener parámetros de la URL
     function getParameterByName(name) {
-        const url = window.location.href;
-        name = name.replace(/[\[\]]/g, '\\$&');
+        const url = window.location.href; // Obtiene la URL actual
+        name = name.replace(/[\[\]]/g, '\\$&'); // Escapa caracteres especiales
         const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-              results = regex.exec(url);
-        if (!results) return null;
-        if (!results[2]) return '';
-        return decodeURIComponent(results[2].replace(/\+/g, ' '));
+              results = regex.exec(url); // Busca el parámetro en la URL
+        if (!results) return null; // Si no se encuentra, retorna null
+        if (!results[2]) return ''; // Si no tiene valor, retorna una cadena vacía
+        return decodeURIComponent(results[2].replace(/\+/g, ' ')); // Decodifica el valor
     }
 
     // Obtener parámetros de la URL
@@ -271,27 +254,22 @@
             const savedTime = localStorage.getItem(videoLink + 'currentTime');
             if (savedTime) {
                 // Mostrar alerta para continuar o reiniciar
-                document.getElementById('alertModal').style.display = 'flex';
-                document.getElementById('continueButton').onclick = function() {
-                    video.src = videoLink;
+                if (confirm("¿Continuar desde donde lo dejaste o empezar de nuevo?")) {
+                    video.src = videoLink; 
                     video.currentTime = parseFloat(savedTime);
                     video.play();
-                    document.getElementById('alertModal').style.display = 'none';
-                };
-                document.getElementById('restartButton').onclick = function() {
+                } else {
                     video.src = videoLink;
                     video.currentTime = 0;
                     video.play();
-                    document.getElementById('alertModal').style.display = 'none';
-                };
+                }
             } else {
                 video.src = videoLink;
                 video.play();
             }
-
             // Establecer el título del video
             if (videoTitle) {
-                document.getElementById('title').innerText = videoTitle;
+                document.getElementById('title').innerText = videoTitle; 
             }
         }
     };
@@ -314,13 +292,14 @@
     const progressContainer = document.querySelector('.progress-container');
     const controls = document.querySelectorAll('#controls, #title, #centerControls, #skipIntro, #progressBar, .progress-container');
     let hideControlsTimeout;
-    const introDuration = 125;
+    const introDuration = 125; // Define la duración de la intro
     let controlsVisible = false;
 
     video.addEventListener('loadeddata', () => {
         durationDisplay.textContent = formatTime(video.duration);
         progressBar.max = video.duration;
         progressBar.value = 0;
+        // Inicializa el control deslizante al principio
     });
 
     video.addEventListener('waiting', () => {
@@ -335,16 +314,16 @@
 
     video.addEventListener('timeupdate', () => {
         currentTimeDisplay.textContent = formatTime(video.currentTime);
-        progressBar.value = video.currentTime;
+        progressBar.value = video.currentTime; // Actualiza el valor del control deslizante
         const progressPercentage = (video.currentTime / video.duration) * 100;
-        loadingBar.style.width = progressPercentage + '%';
-        updateThumbPosition();
+        loadingBar.style.width = progressPercentage + '%'; // Actualiza el ancho de la barra
+        updateThumbPosition(); // Actualiza la posición del thumb superior
     });
 
     video.addEventListener('ended', () => {
-        progressBar.value = video.duration;
-        loadingBar.style.width = '100%';
-        updateThumbPosition();
+        progressBar.value = video.duration; // Coloca el control deslizante al final
+        loadingBar.style.width = '100%'; // Coloca la barra al final
+        updateThumbPosition(); // Actualiza la posición del thumb superior
     });
 
     playPauseButton.addEventListener('click', () => {
@@ -392,8 +371,63 @@
 
     skipIntroButton.addEventListener('click', () => {
         if (controlsVisible) {
-            video.currentTime = skipTime;
-            skipIntroButton.style.display = 'none';
+            video.currentTime = skipTime; // Salta a la duración de la intro
+            skipIntroButton.style.display = 'none'; // Oculta el botón
+        }
+    });
+
+    // Listener para el click en el videoContainer
+    videoContainer.addEventListener('click', (event) => {
+        // Si el click no es dentro de un botón o la barra de progreso
+        if (!event.target.closest('button') && !event.target.closest('.progress-container')) { 
+            if (controlsVisible) {
+                hideControls(true);
+            } else {
+                showControls();
+            }
+        }
+    });
+
+    // Agregar listener a cada botón para detener la propagación del evento click
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation(); // Detiene la propagación del evento click
+        });
+    });
+
+    progressBar.addEventListener('input', () => {
+        if (controlsVisible) {
+            const progressPercentage = (progressBar.value / progressBar.max) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            video.currentTime = progressBar.value;
+            updateThumbPosition();
+        }
+    });
+
+    progressContainer.addEventListener('click', (event) => {
+        if (controlsVisible) {
+            const containerRect = progressContainer.getBoundingClientRect();
+            const clickPosition = event.clientX - containerRect.left;
+            const newTime = (clickPosition / containerRect.width) * video.duration;
+            video.currentTime = newTime;
+            progressBar.value = newTime;
+            const progressPercentage = (newTime / video.duration) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            updateThumbPosition();
+        }
+    });
+
+    topThumb.addEventListener('click', (event) => {
+        if (controlsVisible) {
+            const containerRect = progressContainer.getBoundingClientRect();
+            const clickPosition = event.clientX - containerRect.left;
+            const newTime = (clickPosition / containerRect.width) * video.duration;
+            video.currentTime = newTime;
+            progressBar.value = newTime;
+            const progressPercentage = (newTime / video.duration) * 100;
+            loadingBar.style.width = progressPercentage + '%';
+            updateThumbPosition();
         }
     });
 
@@ -435,19 +469,26 @@
         return `${hrs}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
+    // Guardar el tiempo de reproducción cuando se pausa el video
     video.addEventListener('pause', () => {
-        localStorage.setItem(video.src + 'currentTime', video.currentTime);
+        localStorage.setItem(videoLink + 'currentTime', video.currentTime);
     });
 
-    video.addEventListener('loadeddata', () => {
-        if (localStorage.getItem(video.src + 'currentTime')) {
-            video.currentTime = parseFloat(localStorage.getItem(video.src + 'currentTime'));
+    // Mostrar los controles cuando el mouse se mueve dentro del contenedor del video
+    videoContainer.addEventListener('mousemove', () => {
+        if (!controlsVisible) {
+            showControls();
         }
+        clearTimeout(hideControlsTimeout);
+        hideControlsTimeout = setTimeout(() => {
+            hideControls();
+        }, 3000);
     });
 
-    video.addEventListener('play', hideControls);
-    video.addEventListener('pause', showControls);
-    showControls();
+    // Verificar si hay un parámetro de salto de intro
+    if (skipTime) {
+        skipIntroButton.style.display = 'block';
+    }
 </script>
 </body>
 </html>
